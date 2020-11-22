@@ -36,6 +36,8 @@
                         <a  class="nav-a m-3 p-2" href="{{route('books.panel')}}">Panel</a>
                         @endcan
                         <a  class="nav-a m-3 p-2" href="#">Leeslijst</a>
+                        <a href="{{ url('my_favorites') }}">My Favorites</a>
+
                     </div>
 
                     <div class="input-group p-4">

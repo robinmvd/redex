@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Models\Favorite;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -38,7 +40,6 @@ class Book extends Model
         return $this->belongsTo(Category::class);
     }
 
-
     public function comments()
     {
         return $this->hasMany(Comment::class);
@@ -48,7 +49,6 @@ class Book extends Model
     public function addComment($body)
     {
         $this->comments()->create(compact('body'));
-
 
     }
 

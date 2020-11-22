@@ -25,7 +25,6 @@
                <p>{{$book['author']}}</p>
                <p>{{$book['description']}}</p>
                <button class="btn-primary btn-block">Voeg toe aan leeslijst</button>
-               @can('admin')
                <button class="btn-secondary btn-block">
                    <a class="disabled" href="{{ route('books.edit',$book->id)}}">Edit</a>
                </button>
@@ -35,11 +34,6 @@
                        @method('DELETE')
                        <button class="btn-danger btn-block" type="submit">Delete</button>
                    </form>
-
-
-
-
-               @endcan
            </div>
        </div>
         @endif

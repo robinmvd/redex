@@ -26,12 +26,11 @@
                 @else
                 <div class="d-none">
                 @endif
-                        <img src="{{$book->image}}" alt="{{$book->title}}" class="card-img">
+                    <img src="{{$book->image}}" alt="{{$book->title}}" class="card-img">
                     <h2 class="card-title">{{$book->title}}</h2>
                     <p class="card-text">{{$book->author}}</p>
                     <p class="card-text">{{$book->category->title}}</p>
                     <a  class="btn btn-light m-1" href="{{route('books.show', $book->id)}}">Lees meer</a>
-                    <a  class="btn btn-light m-1" href="#">Voeg toe aan leeslijst</a>
                 </div>
             @endforeach
         </div>
