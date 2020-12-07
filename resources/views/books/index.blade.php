@@ -31,6 +31,14 @@
                     <p class="card-text">{{$book->author}}</p>
                     <p class="card-text">{{$book->category->title}}</p>
                     <a  class="btn btn-light m-1" href="{{route('books.show', $book->id)}}">Lees meer</a>
+                    <form action="{{route('favorite.store')}}" id="favorite_form" method="post">
+                        {{csrf_field()}}
+                        <input name="user_id" type="hidden" value="{{Auth::user()->id}}" />
+                        <input name="book_id" type="hidden" value="{{$book->id}}" />
+                        <button type="submit" class="btn btn-outline-primary">
+                            <i class="far fa-heart"></i>
+                        </button>
+                    </form>
                 </div>
             @endforeach
         </div>
