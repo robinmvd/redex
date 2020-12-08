@@ -38,7 +38,7 @@ class BooksController extends Controller
             ->where('is_hidden', false)
             ->latest()
             ->get();
-        
+
         $favorites = $request->user()->favorites()->pluck('id');
 
         return view('books.index', [
