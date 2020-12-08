@@ -3,169 +3,148 @@
 namespace App\Http\Controllers;
 
 use App\Models\Book;
-use App\Models\Comment;
-use App\Models\User;
-use Illuminate\Support\Facades\Auth;
 use App\Models\Category;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class BooksController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\View\Factory|\Illuminate\Http\Response|\Illuminate\View\View
-     */
-
-    public function comments()
+    public function __construct()
     {
-        return $this->hasMany(Comment::class);
+        $this->middleware('auth');
+        $this->middleware('can:admin')->except(['index', 'show']);
     }
 
-    public function panel()
+    public function index(Request $request)
     {
-        $books = Book::orderBy('created_at', 'desc')->get();
-        $categories = Category::all();
+        $searchTerm = $request->query('q');
 
-        return view('books.panel', compact('books', 'categories'));
+        $categories = Category::query()
+            ->orderBy('title')
+            ->get();
+
+        $books = Book::query()
+            ->when(filled($searchTerm), function ($query) use ($searchTerm) {
+                $searchTerm = '%' . $searchTerm . '%';
+
+                $query->where(function ($query) use ($searchTerm) {
+                    $query->orWhere('title', 'LIKE', $searchTerm)
+                        ->orWhere('author', 'LIKE', $searchTerm)
+                        ->orWhere('description', 'LIKE', $searchTerm);
+
+                });
+
+            })
+            ->where('is_hidden', false)
+            ->latest()
+            ->get();
+        
+        $favorites = $request->user()->favorites()->pluck('id');
+
+        return view('books.index', [
+            'books' => $books,
+            'categories' => $categories,
+            'searchTerm' => $searchTerm,
+            'favorites' => $favorites,
+        ]);
     }
 
-    public function updateStatus(Request $request)
-    {
-        $book = Book::findOrFail($request->book_id);
-        $book->status = $request->status;
-        $book->save();
-
-        return response()->json(['message' => 'Book status updated successfully.']);
-    }
-
-    public function search()
-    {
-        $search_text = $_GET['q'];
-        $books = Book::where('title', 'LIKE', "%".$search_text.'%')
-        ->orWhere('author', 'like', '%' . $search_text . '%')
-        ->orWhere('description', 'like', '%' . $search_text . '%')->get();
-
-        return view('books.searchresult', compact('books'));
-
-    }
-
-    public function index()
-    {
-        $books = Book::orderBy('created_at', 'desc')->get();
-        $categories = Category::all();
-        return view('books.index', compact('books', 'categories'));
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\View\Factory|\Illuminate\Http\Response|\Illuminate\View\View
-     */
     public function create()
     {
-        $categories = Category::all();
-        return view('books.create', compact('categories'));
+        $categories = Category::query()
+            ->orderBy('title')
+            ->get();
+
+        return view('books.create', [
+            'categories' => $categories,
+            'book' => new Book(), // nodig voor form.blade.php partial
+        ]);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\View\Factory|\Illuminate\Http\Response|\Illuminate\View\View
-     */
+    public function show(Book $book)
+    {
+        // check of boek is 'favorited'
+        // door huidige gebruiker
+        $isFavorite = auth()->user()
+            ->favorites()
+            ->where('book_id', $book->id)
+            ->exists();
+
+        return view('books.show', [
+            'book' => $book,
+            'isFavorite' => $isFavorite,
+        ]);
+    }
+
+    public function edit(Book $book)
+    {
+        $categories = Category::query()
+            ->orderBy('title')
+            ->get();
+
+        return view('books.edit', [
+            'book' => $book,
+            'categories' => $categories,
+        ]);
+    }
+
     public function store(Request $request)
     {
-        $request->validate([
+        // de Request object validate methods,
+        // geeft array met gevalideerde velden terug
+        $validated = $request->validate([
             'title' => 'required',
             'author' => 'required',
             'description' => 'required',
             'image' => 'required',
-            'category' => ['exists:categories,id'],
+
+            'category' => [
+                Rule::exists('categories', 'id')
+            ],
         ]);
 
-        $books = new Book();
-        $books->title = $request->get('title');
-        $books->author = $request->get('author');
-        $books->description = $request->get('description');
-        $books->image = $request->get('image');
-        $books->category_id = $request->get('category');
+        $book = new Book();
+        $book->title = $validated['title'];
+        $book->author = $validated['author'];
+        $book->description = $validated['description'];
+        $book->image = $validated['image'];
+        $book->category_id = $validated['category'];
+        $book->save();
 
-
-        $books->save();
-        return redirect('books')->with('success', "Boek is opgeslagen!");
+        return redirect()->route('books.index')
+            ->with('success', 'Boek is opgeslagen!');
     }
 
-    /**
-     * Display the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\View\Factory|\Illuminate\Http\Response|\Illuminate\View\View
-     */
-    public function show($id)
+    public function update(Request $request, Book $book)
     {
-        $book = Book::find($id);
-        if ($book === null) {
-            abort(404, "No book has been found.");
-        }
-
-        return view('books.show', compact('book'));
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\View\Factory|\Illuminate\Http\Response|\Illuminate\View\View
-     */
-
-    public function edit($id)
-    {
-        $book = Book::find($id);
-        $categories = Category::all();
-        return view('books.edit', compact('book', 'categories'));
-    }
-
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Contracts\Foundation\Application|\Illuminate\Http\RedirectResponse|\Illuminate\Http\Response|\Illuminate\Routing\Redirector
-     */
-
-    public function update(Request $request, $id)
-    {
-        $request->validate([
+        $validated = $request->validate([
             'title' => 'required',
             'author' => 'required',
             'description' => 'required',
             'image' => 'required',
-            'category' => ['exists:categories,id'],
+
+            'category' => [
+                // minder error gevoelig dan 'category' => ['exists:categories,id']
+                Rule::exists('categories', 'id')
+            ],
         ]);
 
-        $books = Book::find($id);
-        $books->title = $request->get('title');
-        $books->author = $request->get('author');
-        $books->description = $request->get('description');
-        $books->image = $request->get('image');
-        $books->category_id = $request->get('category');
-        $books->save();
+        $book->title = $validated['title'];
+        $book->author = $validated['author'];
+        $book->description = $validated['description'];
+        $book->image = $validated['image'];
+        $book->category_id = $validated['category'];
+        $book->save();
 
-        return redirect('books')->with('success', 'Book updated!');
+        return redirect()->route('books.index')
+            ->with('success', 'Book updated!');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function destroy($id)
+    public function destroy(Book $book)
     {
-        $book = Book::findOrFail($id);
         $book->delete();
 
-        return redirect()->route('books.index')->with('success', 'Book deleted!');
+        return redirect()->route('books.index')
+            ->with('success', 'Book deleted!');
     }
 }
