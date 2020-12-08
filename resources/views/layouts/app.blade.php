@@ -42,15 +42,13 @@
 
                 <div class="input-group p-4">
                     <form action="{{ route('books.index') }}" method="GET">
+                        {{--
+                             De '??' zal errors verkomen als de $searchTerm variabele niet beschikbaar is.
+                             Dit is een PHP operator (the null-coalescing operator).
+                        --}}
                         <input class="form-control" type="text" name="q"
                                placeholder="Search..."
                                value="{{ $searchTerm ?? null }}">
-                        {{--
-                             If the user made a search we will show the term here
-                             The `??` will avoid any errors when the $searchTerm
-                             variable is not available, it is a PHP operator called
-                             the null-coalescing operator
-                        --}}
                     </form>
                 </div>
 
