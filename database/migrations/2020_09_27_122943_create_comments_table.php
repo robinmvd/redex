@@ -15,10 +15,18 @@ class CreateCommentsTable extends Migration
     {
         Schema::create('comments', function (Blueprint $table) {
             $table->id();
-            $table->integer('book_id');
-            $table->integer('user_id');
-            $table->integer('parent_id')->nullable();
+
+            $table->foreignId('book_id')->constrained('books');
+            $table->foreignId('user_id')->constrained('users');
+
+            $table->foreignId('parent_id')
+                ->nullable()
+                // self-relation zorgt ervoor dat
+                // de parent_id in de comment moet zitten
+                ->constrained('comments');
+
             $table->text('body');
+
             $table->timestamps();
         });
     }
