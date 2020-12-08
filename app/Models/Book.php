@@ -2,8 +2,6 @@
 
 namespace App\Models;
 
-use App\Models\Favorite;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -34,6 +32,9 @@ use Illuminate\Database\Eloquent\Model;
  */
 class Book extends Model
 {
+    protected $casts = [
+        'is_hidden' => 'boolean',
+    ];
 
     public function category()
     {
@@ -43,13 +44,16 @@ class Book extends Model
     public function comments()
     {
         return $this->hasMany(Comment::class);
-
     }
 
-    public function addComment($body)
+    public function users()
     {
-        $this->comments()->create(compact('body'));
-
+        // 'favorites' is de naam van pivot table
+        return $this->belongsToMany(User::class, 'favorites')
+            // gebruik custom pivot table
+            ->using(Favorite::class)
+            ->withTimestamps()
+            // noem deze relatie 'users' i.p.v. 'pivot
+            ->as('users');
     }
-
 }
