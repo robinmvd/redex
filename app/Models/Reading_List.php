@@ -17,4 +17,3 @@ class Reading_List extends Model
         return $this->belongsToMany(User::class, 'user_reading_list');
     }
 }
-
