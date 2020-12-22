@@ -69,6 +69,11 @@ class User extends Authenticatable
         return $this->hasMany(Comment::class);
     }
 
+    public function getCanCommentAttribute(): bool
+    {
+        return $this->favorites()->count() >= 3;
+    }
+
     public function favorites()
     {
         // 'favorites' is pivot table naam

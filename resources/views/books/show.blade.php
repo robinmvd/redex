@@ -77,16 +77,20 @@
             </div>
         @endif
 
-        <form method="POST" action="{{ route('books.comments.store', ['book' => $book]) }}" method="POST">
-            @csrf
-            <div class="form-group">
-                <input placeholder="your comment here." type="text" class="form-control" id="body" name="body"/>
-            </div>
+        @if(auth()->user()->can_comment)
+            <form method="POST" action="{{ route('books.comments.store', ['book' => $book]) }}" method="POST">
+                @csrf
+                <div class="form-group">
+                    <input placeholder="your comment here." type="text" class="form-control" id="body" name="body"/>
+                </div>
 
-            <div class="form-group">
-                <button type="submit" class="btn btn-primary btn-block">Comment</button>
-            </div>
-        </form>
+                <div class="form-group">
+                    <button type="submit" class="btn btn-primary btn-block">Comment</button>
+                </div>
+            </form>
+        @else
+            <p>Favorite at least 3 books before you can place a comment.</p>
+        @endif
     </div>
 @endsection
 
